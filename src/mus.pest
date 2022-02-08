@@ -1,0 +1,62 @@
+// An analyzable musical expression.
+expression = { SOI ~ expression_inner ~ EOI }
+expression_inner = _{
+    (pitch | pitch_class | collection | group)
+    ~ (binary_operator ~ expression_inner)*
+}
+// A pitch-class set.
+collection = { "{" ~ pitch_class_list ~ "}" }
+
+// An infix binary operator over musical expressions.
+binary_operator = { "<" | "=" | ">" }
+// A parenthesized grouping.
+group = { "(" ~ expression_inner ~ ")" }
+
+// A specific instance of a pitch class in a particular octave.
+pitch = { note_permissive ~ octave }
+// A pitch class.
+pitch_class = _{ pitch_class_strict | pitch_class_permissive }
+// The set of all pitches a whole number of octaves apart.
+pitch_class_strict = { integer_strict | note_strict }
+// A permissive variant of pitch_class that allows `10` and `11` as well as `b`
+// for pitch class eleven.
+pitch_class_permissive = { integer_permissive | note_permissive }
+    // A pitch class expressed using integer notation. Accepts `t` and `e` or 
+    // the Pitman numerals `↊` and `↋`. Does not accept hexadecimal-style `A` or
+    // `B`. Does not accept `10` or `11`.
+    integer_strict = { ASCII_DIGIT | dozenal_digit }
+    // Accepts any sequence of decimal digits, including negative numbers.
+    integer_permissive = { "-"? ~ ASCII_DIGIT+ }
+        dozenal_digit = _{ ^"t" | ^"e" | "↊" | "↋" }
+    // A pitch class expressed using traditional note names. Allows accidentals
+    // to be chained.
+    note_strict = { note_name_strict ~ accidental* }
+    // A permissive variant of note that allows `b` for pitch class two.
+    note_permissive = { note_name_permissive ~ accidental* }
+        // A traditional note name. Prohibits `b`, since allowing `b` might lead
+        // to ambiguity with flats.
+        note_name_strict = { 'A'..'G' | "a" | 'c'..'g' }
+        note_name_permissive = { 'A'..'G' | 'a'..'g' }
+        // An accidental. Accepts either ASCII substitutes or the Unicode
+        // accidental symbols.
+        accidental = { "b" | "n" | "s" | "#" | "x" | "𝄫" | "♭" | "♮" | "♯" | "𝄪" }
+        // The number of the octave of this pitch. May be negative.
+        octave = { "-"? ~ ASCII_DIGIT+ }
+// A list of pitch classes optionally delimited by commas and insignificant
+// whitespace. Accepts either pitch class numbers or note names.
+pitch_class_list = _{
+    pc_list_delimited | pc_list_undelimited | ""
+}
+    pc_list_undelimited = _{ pitch_class_strict+ }
+    pc_list_delimited = _{
+        pitch_class_permissive ~ ("," ~ pitch_class_permissive)+ ~ ","? |
+        // If one wishes to specify a single pitch class using decimal integer
+        // notation with a value greater than 10, the final comma before the end
+        // of the list is mandatory.
+        pitch_class_permissive ~ ","
+    }
+
+WHITESPACE = _{ " " | '\t'..'\r' | WHITE_SPACE }
+COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+
+

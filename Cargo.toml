@@ -1,0 +1,48 @@
+[package]
+name = "post_office"
+version = "0.1.0"
+edition = "2021"
+authors = ["Ethan Wu <ethanwu@cs.ucsb.edu>"]
+description = "Utilities for post-tonal music analysis."
+
+[lib]
+name = "post_office"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mailman"
+path = "src/bin.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "3", features = [
+    "cargo",
+    "derive",
+    "env",
+    "unicode",
+    "wrap_help"
+] }
+clap-verbosity-flag = "0.4"
+env_logger = "0.9"
+lazy_static = "1"
+lexical = { version = "6", default-features = false, features = [
+    "parse-integers",
+    "write-integers",
+    "radix",
+] }
+log = "0.4"
+num = "0.4"
+num-derive = "0.3"
+pest = "2"
+pest_derive = "2"
+phf = { version = "0.10", features = ["macros"] }
+thiserror = "1"
+
+[dev-dependencies]
+assert2 = "0.3"
+
+[profile.release]
+codegen-units = 1
+lto = true
+panic = "abort"
+strip = true
