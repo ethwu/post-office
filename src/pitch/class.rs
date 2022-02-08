@@ -339,6 +339,57 @@ mod conversions {
             }
         }
     }
+
+    #[cfg(test)]
+    mod test {
+        use assert2::assert;
+
+        use super::*;
+
+        /// Check that integers are correctly cast into pitch classes.
+        #[test]
+        fn int_to_pc() {
+            assert!(PitchClass::D == 14u8.into());
+            assert!(PitchClass::Bb == (-2i32).into());
+            assert!(PitchClass::C == 24.into());
+            assert!(PitchClass::from_int(8) == PitchClass::Ab);
+            assert!(PitchClass::from_int(12) == PitchClass::C);
+            assert!(PitchClass::from_int(-145) == PitchClass::B);
+        }
+
+        /// Check that note names are cast correctly.
+        #[test]
+        fn note_names() {
+            use std::str::FromStr;
+
+            for (s, pc) in [
+                ("c", PitchClass::C),
+                ("a♭", PitchClass::Ab),
+                ("Abx#b", PitchClass::Bb),
+                ("Fx", PitchClass::G),
+                ("bbb", PitchClass::A),
+                ("-8", PitchClass::E),
+                ("F♭b", PitchClass::Eb),
+            ] {
+                assert!(
+                    PitchClass::from_str(s).is_ok(),
+                    "string: {:?}; pitch class: {:?}",
+                    s,
+                    pc,
+                );
+                assert!(
+                    PitchClass::from_str(s).unwrap() == pc,
+                    "string: {:?}; pitch class: {:?}",
+                    s,
+                    pc,
+                );
+            }
+
+            for s in ["", "♭bb"] {
+                assert!(PitchClass::from_str(s).is_err(), "string: {:?}", s);
+            }
+        }
+    }
 }
 
 mod operations {
@@ -361,6 +412,30 @@ mod operations {
             Self::from(self as isize - rhs.as_())
         }
     }
+
+    #[cfg(test)]
+    mod test {
+        use assert2::assert;
+
+        use super::*;
+
+        #[test]
+        fn addition() {
+            assert!(PitchClass::C + 4 == PitchClass::E);
+            assert!(PitchClass::F + 3 == PitchClass::Ab);
+            assert!(PitchClass::Bb + 8 == PitchClass::Gb);
+            assert!(PitchClass::E + 120 == PitchClass::E);
+            assert!(PitchClass::F + -3 == PitchClass::D);
+        }
+
+        #[test]
+        fn subtraction() {
+            assert!(PitchClass::Db - 4 == PitchClass::A);
+            assert!(PitchClass::Gb - 2 == PitchClass::E);
+            assert!(PitchClass::G - 12 == PitchClass::G);
+            assert!(PitchClass::C - 120 == PitchClass::C);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -368,55 +443,6 @@ mod test {
     use assert2::assert;
 
     use super::*;
-
-    /// Check that integers are correctly cast into pitch classes.
-    #[test]
-    fn int_to_pc() {
-        assert!(PitchClass::D == 14u8.into());
-        assert!(PitchClass::Bb == (-2i32).into());
-        assert!(PitchClass::C == 24.into());
-    }
-
-    /// Check that the `pc!` macro functions correctly.
-    #[test]
-    fn pc_macro() {
-        assert!(pc!(8) == PitchClass::Ab);
-        assert!(pc!(12) == PitchClass::C);
-        assert!(pc!(-145) == PitchClass::B);
-    }
-
-    /// Check that note names are cast correctly.
-    #[test]
-    fn note_names() {
-        use std::str::FromStr;
-
-        for (s, pc) in [
-            ("c", PitchClass::C),
-            ("a♭", PitchClass::Ab),
-            ("Abx#b", PitchClass::Bb),
-            ("Fx", PitchClass::G),
-            ("bbb", PitchClass::A),
-            ("-8", PitchClass::E),
-            ("F♭b", PitchClass::Eb),
-        ] {
-            assert!(
-                PitchClass::from_str(s).is_ok(),
-                "string: {:?}; pitch class: {:?}",
-                s,
-                pc,
-            );
-            assert!(
-                PitchClass::from_str(s).unwrap() == pc,
-                "string: {:?}; pitch class: {:?}",
-                s,
-                pc,
-            );
-        }
-
-        for s in ["", "♭bb"] {
-            assert!(PitchClass::from_str(s).is_err(), "string: {:?}", s);
-        }
-    }
 
     /// Check the display of pitch classes.
     #[test]
@@ -429,7 +455,11 @@ mod test {
             (12, "0"),
             (130, "↊"),
         ] {
-            assert!(format!("{}", pc!(pc)) == s, "pitch class: {:?}", pc);
+            assert!(
+                format!("{}", PitchClass::from(pc)) == s,
+                "pitch class: {:?}",
+                pc
+            );
         }
     }
 }
